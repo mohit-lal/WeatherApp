@@ -1,3 +1,4 @@
+from django.http import HttpResponse, HttpResponseNotFound
 from django.shortcuts import render
 from .models import City
 from .forms import CityForm
@@ -16,13 +17,17 @@ def index(request):
     form = CityForm()
     weather_data = []
     for city in cities:
-        city_weather = requests.get(url.format(city)).json() #request the API data and convert the JSON to Python data types
-        weather = {
-            'city' : city,
-            'temperature' : city_weather['main']['temp'],
-            'description' : city_weather['weather'][0]['description'],
-            'icon' : city_weather['weather'][0]['icon']
-        }
-        weather_data.append(weather) 
+        try:
+            city_name = requests.get(url.format(city))
+            city_weather = city_name.json() #request the API data and convert the JSON to Python data types
+            weather = {
+                'city' : city,
+                'temperature' : city_weather['main']['temp'],
+                'description' : city_weather['weather'][0]['description'],
+                'icon' : city_weather['weather'][0]['icon']
+            }
+            weather_data.append(weather)
+        except KeyError:
+            return HttpResponseNotFound('<h1>City not found</h1>')
     context = {'weather_data' : weather_data, 'form' : form}
     return render(request, 'weather/index.html', context)  #returns the index.html template asdad
